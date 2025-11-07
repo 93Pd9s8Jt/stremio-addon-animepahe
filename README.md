@@ -1,15 +1,16 @@
 # stremio-addon-animepahe
 
  WIP addon to fetch the catalog and streams from AnimePahe.
- <!--
+
 ## Adding to Stremio
 
 On [Stremio Web](https://web.stremio.com), go to "Addons", click "Add Addon" and paste this link:
 
 ```
-https://unity-worker-prod.plushdohn.workers.dev/manifest.json
+https://stremio-animepahe.tsz1da2a.workers.dev/manifest.json
 ```
--->
+
+This is hosted on the free tier of Clouddlare Workers, so may be ratelimited; please selfhost this if you have problems.
 
 ## Usage
 
