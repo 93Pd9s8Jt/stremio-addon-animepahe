@@ -3,8 +3,8 @@ import { cors } from "hono/cors";
 import { createAddonHandler } from "./lib/addon.js";
 
 const PROXY_WHITELISTED_DOMAINS = [
-  "i.animepahe.si", // images
-  "vault-09.uwucdn.top" // videos
+  "i\\.animepahe\\.si", // images
+  "vault-\\d+\\.uwucdn\\.top" // videos
 ];
 
 console.log("Starting app");
@@ -19,7 +19,7 @@ app.use('*', cors())
 app.get("/_internal/stream-proxy/img/:url", async (c) => {
   const url = new URL(c.req.param("url"));
 
-  if (!PROXY_WHITELISTED_DOMAINS.includes(url.hostname)) {
+  if (!PROXY_WHITELISTED_DOMAINS.some(pattern => new RegExp(pattern).test(url.hostname))) {
     return new Response("Not allowed", { status: 403 });
   }
 
