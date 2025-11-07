@@ -7,24 +7,13 @@ export function createAddonHandler(proxyBase: string) {
   return createHandler({
     manifest: {
       id: "org.stremio.animepahe",
-      version: "0.0.6",
+      version: "0.1.0",
       name: "AnimePahe",
       catalogs: [
         {
           id: "animepahe",
           type: "series",
           name: "AnimePahe",
-          extra: [
-            {
-              name: "search",
-              isRequired: true,
-            },
-          ],
-        },
-        {
-          id: "streaming-community",
-          type: "movie",
-          name: "StreamingCommunity",
           extra: [
             {
               name: "search",
