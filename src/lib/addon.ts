@@ -1,21 +1,19 @@
 import { createHandler } from "stremio-rewired";
-import { AnimeUnityProvider } from "./providers/anime-unity.js";
-import { StreamingCommunityProvider } from "./providers/streaming-community.js";
+import { AnimePaheProvider } from "./providers/animepahe.js";
 
-const auProvider = new AnimeUnityProvider();
-const scProvider = new StreamingCommunityProvider();
+const apProvider = new AnimePaheProvider();
 
 export function createAddonHandler(proxyBase: string) {
   return createHandler({
     manifest: {
-      id: "org.stremio.unity",
+      id: "org.stremio.animepahe",
       version: "0.0.6",
-      name: "Unity",
+      name: "AnimePahe",
       catalogs: [
         {
-          id: "anime-unity",
+          id: "animepahe",
           type: "series",
-          name: "AnimeUnity",
+          name: "AnimePahe",
           extra: [
             {
               name: "search",
@@ -35,31 +33,19 @@ export function createAddonHandler(proxyBase: string) {
           ],
         },
       ],
-      idPrefixes: ["au", "sc"],
+      idPrefixes: ["ap", "sc"],
       description:
-        "Source content and catalogs from AnimeUnity (italian anime streaming website)",
+        "Source content and catalogs from AnimePahe",
       resources: ["stream", "catalog", "meta"],
       types: ["series", "movie"],
     },
     onCatalogRequest: async (type, id, extra) => {
-      if (id === "anime-unity") {
-        const records = await auProvider.search(extra?.search || "");
+      if (id === "animepahe") {
+        const records = await apProvider.search(extra?.search || "", proxyBase);
         return {
-          metas: records.map((record) => ({
+          metas: records.map((record: any) => ({
             id: record.id,
             type: "series",
-            name: record.title,
-            poster: record.imageUrl,
-          })),
-        };
-      }
-
-      if (id === "streaming-community") {
-        const records = await scProvider.search(extra?.search || "");
-        return {
-          metas: records.map((record) => ({
-            id: record.id,
-            type: "movie",
             name: record.title,
             poster: record.imageUrl,
           })),
@@ -69,25 +55,19 @@ export function createAddonHandler(proxyBase: string) {
       return { metas: [] };
     },
     onMetaRequest: async (type, id) => {
-      if (id.startsWith("au")) {
-        const idWithoutPrefix = id.replace("au", "");
-        const meta = await auProvider.getMeta(idWithoutPrefix);
-        return { meta };
-      }
-
-      if (id.startsWith("sc")) {
-        const idWithoutPrefix = id.replace("sc", "");
-        const meta = await scProvider.getMeta(idWithoutPrefix);
+      if (id.startsWith("ap")) {
+        const idWithoutPrefix = id.replace(/^ap/, "");
+        const meta = await apProvider.getMeta(idWithoutPrefix, proxyBase);
         return { meta };
       }
 
       return { meta: undefined as any };
     },
     onStreamRequest: async (type, id) => {
-      if (id.startsWith("au")) {
-        const idWithoutPrefix = id.replace("au", "");
+      if (id.startsWith("ap")) {
+        const idWithoutPrefix = id.replace(/^ap/, "");
 
-        const streams = await auProvider.getStreams(idWithoutPrefix);
+        const streams = await apProvider.getStreams(idWithoutPrefix);
 
         const proxiedStreams = streams.map((stream) => ({
           ...stream,
@@ -97,12 +77,6 @@ export function createAddonHandler(proxyBase: string) {
         return {
           streams: proxiedStreams,
         };
-      } else if (id.startsWith("sc")) {
-        const idWithoutPrefix = id.replace("sc", "");
-
-        const streams = await scProvider.getStreams(idWithoutPrefix);
-
-        return { streams };
       }
 
       return {

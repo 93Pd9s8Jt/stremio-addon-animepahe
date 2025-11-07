@@ -3,13 +3,16 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "nitro dev"
+    "dev": "stremio-rewired launch && bun --watch ./src/worker.ts",
+    "dev:debug": "bun --inspect --watch ./src/worker.ts"
   },
   "dependencies": {
-    "hono": "^4.10.3",
+    "hono": "^4.10.4",
+    "js-unpacker": "^1.0.2",
+    "linkedom": "^0.18.2",
     "m3u8-parser": "^7.2.0",
-    "stremio-rewired": "0.1.0",
-    "zod": "4.1.12"
+    "stremio-rewired": "0.2.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bun": "^1.3.1",

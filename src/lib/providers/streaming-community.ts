@@ -62,9 +62,9 @@ export class StreamingCommunityProvider implements Provider {
     try {
       const data = schema.parse(json);
 
-      return data.props.titles.map((record) => {
+      return data.props.titles.map((record: any) => {
         const posterImage = record.images.find(
-          (image) => image.type === "poster"
+          (image: any) => image.type === "poster"
         );
 
         return {
@@ -241,9 +241,9 @@ export class StreamingCommunityProvider implements Provider {
       const data = metaSchema.parse(json);
       const title = data.props.title;
 
-      const posterImage = title.images.find((image) => image.type === "poster");
+      const posterImage = title.images.find((image: any) => image.type === "poster");
       const backgroundImage = title.images.find(
-        (image) => image.type === "background"
+        (image: any) => image.type === "background"
       );
 
       const baseMeta: CatalogItem = {

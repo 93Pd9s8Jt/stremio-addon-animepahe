@@ -1,19 +1,15 @@
 import alchemy from "alchemy";
-import { launch } from "stremio-rewired";
 import { Worker } from "alchemy/cloudflare";
 import { CloudflareStateStore } from "alchemy/state";
 
-const app = await alchemy("unity", {
+const app = await alchemy("animepahe", {
   stateStore: (scope) => new CloudflareStateStore(scope),
 });
 
 await Worker("worker", {
+  name: "stremio-animepahe",
   entrypoint: "./src/worker.ts",
   compatibility: process.env.CI ? undefined : "node",
 });
 
 await app.finalize();
-
-if (!process.env.CI) {
-  await launch(1337);
-}

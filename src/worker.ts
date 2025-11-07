@@ -3,18 +3,20 @@ import { cors } from "hono/cors";
 import { createAddonHandler } from "./lib/addon.js";
 
 const PROXY_WHITELISTED_DOMAINS = [
-  "au-d1-01.scws-content.net",
-  "au-d1-02.scws-content.net",
-  "au-d1-03.scws-content.net",
-  "au-d1-04.scws-content.net",
-  "au-d1-05.scws-content.net",
+  "i.animepahe.si", // images
+  "vault-09.uwucdn.top" // videos
 ];
+
+console.log("Starting app");
+
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = "0"; // animepahe's cdn has an expired ssl certificate
 
 const app = new Hono();
 
-app.use("*", cors());
 
-app.get("/_internal/stream-proxy/:url", async (c) => {
+app.use('*', cors())
+
+app.get("/_internal/stream-proxy/img/:url", async (c) => {
   const url = new URL(c.req.param("url"));
 
   if (!PROXY_WHITELISTED_DOMAINS.includes(url.hostname)) {
@@ -22,24 +24,56 @@ app.get("/_internal/stream-proxy/:url", async (c) => {
   }
 
   const response = await fetch(url.toString(), {
-    headers: c.req.raw.headers,
+    headers: { // fake browser headers, necessary for the cdns or they will not allow the request
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Referer': url.origin,
+    },
   });
 
   return response;
 });
 
-app.get("*", async (c) => {
-  const url = new URL(c.req.url);
+app.get("/_internal/stream-proxy/:url", async (c) => {
+  try {
+    const url = new URL(c.req.param("url"));
 
-  const proxyBase = `${url.origin}/_internal/stream-proxy/`;
+    const response = await fetch(url.toString(), {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Referer': url.origin,
+      },
+    });
 
-  const response = await createAddonHandler(proxyBase)(c.req.raw);
-
-  if (!response) {
-    return new Response("Not found", { status: 404 });
+    return response;
+  } catch (error) {
+    console.error("Proxy fetch error:", error);
+    return new Response(`Error fetching remote URL: ${(error as Error).message}`, { status: 502 });
   }
+});
 
-  return response;
+app.get("*", async (c) => {
+  try {
+    const url = new URL(c.req.url);
+
+    const proxyBase = `${url.origin}/_internal/stream-proxy/`;
+    
+    const response = await createAddonHandler(proxyBase)(c.req.raw);
+
+    if (!response) {
+      return new Response("Not found", { status: 404 });
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Main route error:", error);
+    return new Response(`Internal Server Error: ${(error as Error).message}`, { status: 500 });
+  }
 });
 
 export default app;

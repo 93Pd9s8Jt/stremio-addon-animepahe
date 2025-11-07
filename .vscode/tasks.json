@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "alchemy-dev",
+      "type": "shell",
+      "command": "bun",
+      "args": ["alchemy", "dev", "--inspect-wait"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Waiting for inspector to connect.*"
+        }
+      }
+    }
+  ]
+}
