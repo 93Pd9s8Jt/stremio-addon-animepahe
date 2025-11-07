@@ -9,7 +9,7 @@ const app = await alchemy("animepahe", {
 await Worker("worker", {
   name: "stremio-animepahe",
   entrypoint: "./src/worker.ts",
-  compatibility: process.env.CI ? undefined : "node",
+  compatibility: "node",
 });
 
 await app.finalize();
