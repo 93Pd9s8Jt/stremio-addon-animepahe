@@ -1,4 +1,4 @@
-name = "stremio-addon-unity"
+name = "stremio-animepahe"
 main = "src/worker.ts"
 compatibility_date = "2025-11-06"
 compatibility_flags = ["nodejs_compat"]
