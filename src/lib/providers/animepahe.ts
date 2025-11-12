@@ -1,5 +1,5 @@
 import z from "zod";
-import type { CatalogItem } from "stremio-rewired";
+import type { Meta } from "stremio-rewired";
 import { parseHTML } from 'linkedom';
 import type { Provider } from "./interface.js";
 import JsUnpacker from "js-unpacker"; // necessary for one of the animepahe scraping methods
@@ -218,7 +218,7 @@ export class AnimePaheProvider implements Provider {
 
   }
 
-  async getMeta(id: string, proxyBase: string): Promise<CatalogItem> {
+  async getMeta(id: string, proxyBase: string): Promise<Meta> {
     const baseUrl = "https://animepahe.si";
     const animeId = id.replace("ap", "").split("|")[0];
 
@@ -245,7 +245,7 @@ export class AnimePaheProvider implements Provider {
       .replace('Aired:', '')       // remove the label
       .trim();
 
-    var externalLink = document.querySelector(".external-links a")?.getAttribute("href") // can't use :(
+    var externalLink =  new URL(document.querySelector(".external-links a")?.getAttribute("href") ?? "", "https://example.com").href // can't use :(
     var genres = Array.from(document.querySelectorAll(".anime-genre li")).map(g => g.textContent.trim())
 
 
@@ -301,6 +301,7 @@ export class AnimePaheProvider implements Provider {
       background: background ?? "",
       releaseInfo: aired ?? "",
       genres: genres,
+      website: externalLink ?? "",
       videos,
     };
   }

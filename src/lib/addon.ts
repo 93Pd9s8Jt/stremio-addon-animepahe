@@ -4,10 +4,15 @@ import { AnimePaheProvider } from "./providers/animepahe.js";
 const apProvider = new AnimePaheProvider();
 
 export function createAddonHandler(proxyBase: string) {
-  return createHandler({
+  return createHandler<{
+  stremioAddonsConfig: {
+    issuer: string;
+    signature: string;
+  };
+}>({
     manifest: {
       id: "org.stremio.animepahe",
-      version: "0.1.0",
+      version: "0.1.1",
       name: "AnimePahe",
       catalogs: [
         {
@@ -22,11 +27,15 @@ export function createAddonHandler(proxyBase: string) {
           ],
         },
       ],
-      idPrefixes: ["ap", "sc"],
+      idPrefixes: ["ap"],
       description:
         "Source content and catalogs from AnimePahe",
       resources: ["stream", "catalog", "meta"],
       types: ["series", "movie"],
+      stremioAddonsConfig: {
+        issuer: "https://stremio-addons.net",
+        signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..VLpw1nEAEBzw_J92by3_hQ.1M_YRbaFGgASQwgSW1AtqFxdX0gF2p_wdzBEmG0qyA_ZTaAABpw2YhNuOtKDW6iiv-2yWFq1b6TMcMfAwhYncjTOmgmoRIouIKyHon2HdgIohGqu8EW7uE-KE58eKTTs.X57yNKcrTm898j68au6fSg"
+      }
     },
     onCatalogRequest: async (type, id, extra) => {
       if (id === "animepahe") {
