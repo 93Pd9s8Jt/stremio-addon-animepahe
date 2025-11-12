@@ -31,6 +31,7 @@ app.get("/_internal/stream-proxy/img/:url", async (c) => {
       'Accept-Language': 'en-US,en;q=0.9',
       'Accept-Encoding': 'gzip, deflate, br',
       'Referer': url.origin,
+      'Cookie': url.hostname == "animepahe.si" ? '__ddg1_=;__ddg2_=;' : "" // for ddos-guard
     },
   });
 
