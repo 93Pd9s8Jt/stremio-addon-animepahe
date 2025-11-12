@@ -245,6 +245,14 @@ export class AnimePaheProvider implements Provider {
       .replace('Aired:', '')       // remove the label
       .trim();
 
+    const durationTag = Array.from(pTags).find(p =>
+      p.textContent.trim().startsWith('Duration:')
+    );
+    var duration = durationTag?.textContent
+      .replace(/\s+/g, ' ')        // normalize whitespace
+      .replace('Duration:', '')       // remove the label
+      .trim();
+
     var externalLink =  new URL(document.querySelector(".external-links a")?.getAttribute("href") ?? "", "https://example.com").href // can't use :(
     var genres = Array.from(document.querySelectorAll(".anime-genre li")).map(g => g.textContent.trim())
 
@@ -301,6 +309,7 @@ export class AnimePaheProvider implements Provider {
       description: description ?? "",
       background: background ?? "",
       releaseInfo: aired ?? "",
+      runtime: duration,
       genres: genres,
       website: externalLink ?? "",
       videos,
