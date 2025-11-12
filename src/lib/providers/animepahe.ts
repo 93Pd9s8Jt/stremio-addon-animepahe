@@ -296,6 +296,7 @@ export class AnimePaheProvider implements Provider {
       id: `ap${animeId}`,
       name: name ?? "",
       type: "series",
+      logo: proxyUrl("https://animepahe.si/app/images/apdoesnthavelogotheysaidapistooplaintheysaid.png", proxyBase),
       poster: poster ?? "",
       description: description ?? "",
       background: background ?? "",
