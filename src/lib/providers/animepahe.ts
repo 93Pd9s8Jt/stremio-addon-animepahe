@@ -304,7 +304,7 @@ export class AnimePaheProvider implements Provider {
       id: `ap${animeId}`,
       name: name ?? "",
       type: "series",
-      logo: "https://raw.githubusercontent.com/93Pd9s8Jt/stremio-addon-animepahe/refs/heads/main/images/apdoesnthavelogotheysaidapistooplaintheysaid.png", // higher quality conversion of the svg
+      //logo: "https://raw.githubusercontent.com/93Pd9s8Jt/stremio-addon-animepahe/refs/heads/main/images/apdoesnthavelogotheysaidapistooplaintheysaid.png", // higher quality conversion of the svg
       poster: poster ?? "",
       description: description ?? "",
       background: background ?? "",
