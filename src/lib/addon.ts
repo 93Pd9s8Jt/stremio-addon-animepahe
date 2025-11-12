@@ -5,11 +5,11 @@ const apProvider = new AnimePaheProvider();
 
 export function createAddonHandler(proxyBase: string) {
   return createHandler<{
-  stremioAddonsConfig: {
-    issuer: string;
-    signature: string;
-  };
-}>({
+    stremioAddonsConfig: {
+      issuer: string;
+      signature: string;
+    };
+  }>({
     manifest: {
       id: "org.stremio.animepahe",
       version: "0.1.2",
@@ -22,16 +22,22 @@ export function createAddonHandler(proxyBase: string) {
           extra: [
             {
               name: "search",
-              isRequired: true,
+              isRequired: false,
             },
           ],
         },
+
       ],
       idPrefixes: ["ap"],
       description:
         "Source content and catalogs from AnimePahe",
       resources: ["stream", "catalog", "meta"],
       types: ["series", "movie"],
+      addonCatalogs: [{
+        type: "series",
+        id: "animepahe-latest",
+        name: "Latest Anime"
+      }],
       stremioAddonsConfig: {
         issuer: "https://stremio-addons.net",
         signature: "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..VLpw1nEAEBzw_J92by3_hQ.1M_YRbaFGgASQwgSW1AtqFxdX0gF2p_wdzBEmG0qyA_ZTaAABpw2YhNuOtKDW6iiv-2yWFq1b6TMcMfAwhYncjTOmgmoRIouIKyHon2HdgIohGqu8EW7uE-KE58eKTTs.X57yNKcrTm898j68au6fSg"
@@ -39,15 +45,29 @@ export function createAddonHandler(proxyBase: string) {
     },
     onCatalogRequest: async (type, id, extra) => {
       if (id === "animepahe") {
-        const records = await apProvider.search(extra?.search || "", proxyBase);
-        return {
-          metas: records.map((record: any) => ({
-            id: record.id,
-            type: "series",
-            name: record.title,
-            poster: record.imageUrl,
-          })),
-        };
+        if (extra?.search) {
+          const records = await apProvider.search(extra?.search || "", proxyBase);
+          return {
+            metas: records.map((record: any) => ({
+              id: record.id,
+              type: "series",
+              name: record.title,
+              poster: record.imageUrl,
+            })),
+          };
+        }
+        else {
+          // catalog for latest
+          const records = await apProvider.getLatest(proxyBase);
+          return {
+            metas: records.map((record: any) => ({
+              id: record.id,
+              type: "series",
+              name: record.title,
+              poster: record.imageUrl,
+            })),
+          };
+        }
       }
 
       return { metas: [] };

@@ -4,11 +4,11 @@ import { parseHTML } from 'linkedom';
 import type { Provider } from "./interface.js";
 import JsUnpacker from "js-unpacker"; // necessary for one of the animepahe scraping methods
 
-
+const BASEURL = "https://animepahe.si";
 
 export class AnimePaheProvider implements Provider {
   async search(title: string, proxyBase: string) {
-    const response = await fetch(`https://animepahe.si/api?m=search&l=8&q=${title}`, {
+    const response = await fetch(`${BASEURL}/api?m=search&l=8&q=${title}`, {
       method: "GET",
       headers: {
         Cookie: '__ddg1_=;__ddg2_=;',
@@ -53,11 +53,145 @@ export class AnimePaheProvider implements Provider {
     }
   }
 
+  async getLatest(proxyBase: string) {
+    const response = await fetch(`${BASEURL}/api?m=airing&page=1`, {
+      headers: {
+        Cookie: '__ddg1_=;__ddg2_=;',
+      }
+    })
+    const latestJson = await response.json();
+    const latestSchema = z.object({
+      data: z.array(
+        z.object({
+          id: z.number(),
+          anime_id: z.number(),
+          anime_title: z.string(),
+          anime_session: z.string(),
+          episode: z.number(),
+          episode2: z.number(),
+          edition: z.string(),
+          fansub: z.string(),
+          snapshot: z.string(),
+          disc: z.string(),
+          session: z.string(),
+          filler: z.number(),
+          created_at: z.string(),
+          completed: z.number()
+        })
+      )
+    })
+
+    const latestParsed = latestSchema.parse(latestJson);
+    return latestParsed.data.map((record) => ({
+      id: `ap${record.anime_session}`,
+      title: record.anime_title,
+      imageUrl: proxyUrl(record.snapshot, proxyBase),
+    }))
+
+  }
+
+  async getMeta(id: string, proxyBase: string): Promise<Meta> {
+    const animeId = id.replace("ap", "").split("|")[0];
+
+    const response = await fetch(`${BASEURL}/anime/${animeId}`, {
+      method: "GET",
+      headers: {
+        Cookie: '__ddg1_=;__ddg2_=;',
+      },
+    });
+
+    const json = await response.text();
+
+    const { document } = parseHTML(json);
+    var description = document.querySelector('.anime-synopsis')?.innerHTML.replace(/<br\s*\/?>/g, "\n").trim();
+    var name = document.querySelector('span[style="user-select:text"]')?.textContent?.trim();
+    var poster = document.querySelector('img[data-src$=".jpg"]')?.getAttribute('data-src')?.trim();
+    var background = "https:" + document.querySelector('div.anime-cover')?.getAttribute('data-src')?.trim();
+    const pTags = document.querySelectorAll(".anime-info p");
+    const airedTag = Array.from(pTags).find(p =>
+      p.textContent.trim().startsWith('Aired:')
+    );
+    var aired = airedTag?.textContent
+      .replace(/\s+/g, ' ')        // normalize whitespace
+      .replace('Aired:', '')       // remove the label
+      .trim();
+
+    const durationTag = Array.from(pTags).find(p =>
+      p.textContent.trim().startsWith('Duration:')
+    );
+    var duration = durationTag?.textContent
+      .replace(/\s+/g, ' ')        // normalize whitespace
+      .replace('Duration:', '')       // remove the label
+      .trim();
+
+    var externalLink = new URL(document.querySelector(".external-links a")?.getAttribute("href") ?? "", "https://example.com").href // can't use :(
+    var genres = Array.from(document.querySelectorAll(".anime-genre li")).map(g => g.textContent.trim())
+
+
+
+    poster = proxyUrl(poster ?? "", proxyBase);
+    background = proxyUrl(background ?? "", proxyBase);
+
+    const videosData = await fetch(`${BASEURL}/api?m=release&id=${animeId}&sort=episode_dsc`, {
+      headers: {
+        Cookie: '__ddg1_=;__ddg2_=;',
+      }
+    });
+    const videosJson = await videosData.json();
+    const videosSchema = z.object({
+      data: z.array(
+        z.object({
+          id: z.number(),
+          anime_id: z.number(),
+          episode: z.number(),
+          episode2: z.number(),
+          edition: z.string(),
+          title: z.string(),
+          snapshot: z.string(),
+          disc: z.string(),
+          audio: z.string(),
+          duration: z.string(),
+          session: z.string(),
+          filler: z.number(),
+          created_at: z.string(),
+        })
+      ),
+    });
+    const videosParsed = videosSchema.parse(videosJson);
+
+    const videos = videosParsed.data.map((video) => ({
+      id: `ap${animeId}|${video.session}`,
+      title: video.title || `Episode ${video.episode}`,
+      released: new Date(video.created_at).toISOString(),
+      episode: video.episode,
+      season: 0, // otherwise they will be sorted in reverse order
+      thumbnail: proxyUrl(video.snapshot, proxyBase),
+      available: true,
+    }));
+
+    videos.sort((a, b) => a.episode - b.episode);
+
+    return {
+      id: `ap${animeId}`,
+      name: name ?? "",
+      type: "series",
+      //logo: "https://raw.githubusercontent.com/93Pd9s8Jt/stremio-addon-animepahe/refs/heads/main/images/apdoesnthavelogotheysaidapistooplaintheysaid.png", // higher quality conversion of the svg
+      poster: poster ?? "",
+      description: description ?? "",
+      background: background ?? "",
+      releaseInfo: aired ?? "",
+      runtime: duration,
+      genres: genres,
+      website: externalLink ?? "",
+      videos,
+    };
+  }
+
   async getStreams(
     id: string
   ): Promise<Array<{ id: string; title: string; url: string }>> {
     const [animeId, animeSession] = id.split("|");
-    const res = await fetch(`https://animepahe.si/play/${animeId}/${animeSession}`, { headers: { Cookie: '__ddg1_=;__ddg2_=;' } });
+    const res = await fetch(`${BASEURL}/play/${animeId}/${animeSession}`, { headers: { Cookie: '__ddg1_=;__ddg2_=;' } });
     const html = await res.text();
     const { document } = parseHTML(html);
 
@@ -206,146 +340,12 @@ export class AnimePaheProvider implements Provider {
 
     }
 
-
-
-
-
     videos.sort((a, b) => {
       return parseInt(b._quality ?? "") - parseInt(a._quality ?? "")
     });
     videos.map(v => { v.id, v.title, v.url });
     return videos;
 
-  }
-
-  async getMeta(id: string, proxyBase: string): Promise<Meta> {
-    const baseUrl = "https://animepahe.si";
-    const animeId = id.replace("ap", "").split("|")[0];
-
-    const response = await fetch(`${baseUrl}/anime/${animeId}`, {
-      method: "GET",
-      headers: {
-        Cookie: '__ddg1_=;__ddg2_=;',
-      },
-    });
-
-    const json = await response.text();
-
-    const { document } = parseHTML(json);
-    var description = document.querySelector('.anime-synopsis')?.innerHTML.replace(/<br\s*\/?>/g, "\n").trim();
-    var name = document.querySelector('span[style="user-select:text"]')?.textContent?.trim();
-    var poster = document.querySelector('img[data-src$=".jpg"]')?.getAttribute('data-src')?.trim();
-    var background = "https:" + document.querySelector('div.anime-cover')?.getAttribute('data-src')?.trim();
-    const pTags = document.querySelectorAll(".anime-info p");
-    const airedTag = Array.from(pTags).find(p =>
-      p.textContent.trim().startsWith('Aired:')
-    );
-    var aired = airedTag?.textContent
-      .replace(/\s+/g, ' ')        // normalize whitespace
-      .replace('Aired:', '')       // remove the label
-      .trim();
-
-    const durationTag = Array.from(pTags).find(p =>
-      p.textContent.trim().startsWith('Duration:')
-    );
-    var duration = durationTag?.textContent
-      .replace(/\s+/g, ' ')        // normalize whitespace
-      .replace('Duration:', '')       // remove the label
-      .trim();
-
-    var externalLink =  new URL(document.querySelector(".external-links a")?.getAttribute("href") ?? "", "https://example.com").href // can't use :(
-    var genres = Array.from(document.querySelectorAll(".anime-genre li")).map(g => g.textContent.trim())
-
-
-
-    poster = proxyUrl(poster ?? "", proxyBase);
-    background = proxyUrl(background ?? "", proxyBase);
-
-    const videosData = await fetch(`${baseUrl}/api?m=release&id=${animeId}&sort=episode_dsc`, {
-      headers: {
-        Cookie: '__ddg1_=;__ddg2_=;',
-      }
-    });
-    const videosJson = await videosData.json();
-    const videosSchema = z.object({
-      data: z.array(
-        z.object({
-          id: z.number(),
-          anime_id: z.number(),
-          episode: z.number(),
-          episode2: z.number(),
-          edition: z.string(),
-          title: z.string(),
-          snapshot: z.string(),
-          disc: z.string(),
-          audio: z.string(),
-          duration: z.string(),
-          session: z.string(),
-          filler: z.number(),
-          created_at: z.string(),
-        })
-      ),
-    });
-    const videosParsed = videosSchema.parse(videosJson);
-
-    const videos = videosParsed.data.map((video) => ({
-      id: `ap${animeId}|${video.session}`,
-      title: video.title || `Episode ${video.episode}`,
-      released: new Date(video.created_at).toISOString(),
-      episode: video.episode,
-      season: 0, // otherwise they will be sorted in reverse order
-      thumbnail: proxyUrl(video.snapshot, proxyBase),
-      available: true,
-    }));
-
-    videos.sort((a, b) => a.episode - b.episode);
-
-    return {
-      id: `ap${animeId}`,
-      name: name ?? "",
-      type: "series",
-      //logo: "https://raw.githubusercontent.com/93Pd9s8Jt/stremio-addon-animepahe/refs/heads/main/images/apdoesnthavelogotheysaidapistooplaintheysaid.png", // higher quality conversion of the svg
-      poster: poster ?? "",
-      description: description ?? "",
-      background: background ?? "",
-      releaseInfo: aired ?? "",
-      runtime: duration,
-      genres: genres,
-      website: externalLink ?? "",
-      videos,
-    };
-  }
-
-
-  async getSession(title: string, animeId: string) {
-    const baseUrl = "https://animepahe.si";
-
-    const res = await fetch(`${baseUrl}/a/${animeId}`, {
-      redirect: "manual",
-      method: "GET",
-      headers: {
-        Cookie: '__ddg1_=;__ddg2_=;',
-      },
-    });
-
-    const locationHeader = res.headers.get('location');
-    if (!locationHeader) {
-      throw new Error('Location header not found in response');
-    }
-    const location = `https://${locationHeader.split('https://').pop()}`;
-
-    if (location === `${baseUrl}/anime`) {
-      const response = await fetch(`${baseUrl}/api?m=search&q=${title}`, {
-        method: "GET",
-        headers: {
-          Cookie: '__ddg1_=;__ddg2_=;',
-        },
-      });
-      const data = await response.text();
-      const sessionMatch = data.match(new RegExp(`"id":${animeId}.*?"session":"([^"]+)"`));
-      return sessionMatch ? sessionMatch[1] : null;
-    }
-    return location.split('/').pop();
   }
 }
 
