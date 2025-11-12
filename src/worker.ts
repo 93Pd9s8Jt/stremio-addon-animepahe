@@ -4,7 +4,8 @@ import { createAddonHandler } from "./lib/addon.js";
 
 const PROXY_WHITELISTED_DOMAINS = [
   "i\\.animepahe\\.si", // images
-  "vault-\\d+\\.uwucdn\\.top" // videos
+  "vault-\\d+\\.uwucdn\\.top", // videos
+  "animepahe.si" // logo
 ];
 
 console.log("Starting app");
