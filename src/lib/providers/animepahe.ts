@@ -132,13 +132,8 @@ export class AnimePaheProvider implements Provider {
     poster = proxyUrl(poster ?? "", proxyBase);
     background = proxyUrl(background ?? "", proxyBase);
 
-    const videosData = await fetch(`${BASEURL}/api?m=release&id=${animeId}&sort=episode_dsc`, {
-      headers: {
-        Cookie: '__ddg1_=;__ddg2_=;',
-      }
-    });
-    const videosJson = await videosData.json();
     const videosSchema = z.object({
+      last_page: z.number(),
       data: z.array(
         z.object({
           id: z.number(),
@@ -157,9 +152,30 @@ export class AnimePaheProvider implements Provider {
         })
       ),
     });
+
+    const fetchVideos = async (page: number) => {
+      const videosData = await fetch(`${BASEURL}/api?m=release&id=${animeId}&sort=episode_dsc&page=${page}`, {
+        headers: {
+          Cookie: '__ddg1_=;__ddg2_=;',
+        }
+      });
+      const videosJson = await videosData.json();
+      return videosJson
+    }
+
+    const videosJson = await fetchVideos(1)
     const videosParsed = videosSchema.parse(videosJson);
 
-    const videos = videosParsed.data.map((video) => ({
+    let allData = []
+    if (videosParsed.last_page > 1) {
+      // [2, ... last_page]
+      let pages = Array.from(Array(videosParsed.last_page - 2), (_, i) => i + 2)
+      allData = (await Promise.all(
+        pages.map((page) => fetchVideos(page))
+      )).map(p => p.data);
+    }
+
+    const videos = videosParsed.data.concat(...allData).map((video) => ({
       id: `ap${animeId}|${video.session}`,
       title: video.title || `Episode ${video.episode}`,
       released: new Date(video.created_at).toISOString(),
