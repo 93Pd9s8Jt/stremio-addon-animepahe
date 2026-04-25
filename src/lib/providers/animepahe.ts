@@ -180,7 +180,7 @@ export class AnimePaheProvider implements Provider {
       title: video.title || `Episode ${video.episode}`,
       released: new Date(video.created_at).toISOString(),
       episode: video.episode,
-      season: 0, // otherwise they will be sorted in reverse order
+      season: 1, // if no season they will be sorted in reverse order
       thumbnail: proxyUrl(video.snapshot, proxyBase),
       available: true,
     }));
