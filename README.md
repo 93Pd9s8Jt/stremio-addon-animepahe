@@ -21,3 +21,7 @@ Note that results may take a few seconds longer to appear compared to the native
 ## Metrics on the public version
 (As of March 2026)
 <img width="1364" height="432" alt="image" src="https://github.com/user-attachments/assets/585af94d-54e3-455f-8bb0-79d1a4d5e2cc" />
+
+## Errors?
+
+If the url for animepahe changes, please open an issue and i'll fix it as soon as I can.
