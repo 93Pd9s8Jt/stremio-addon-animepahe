@@ -12,7 +12,7 @@ export function createAddonHandler(proxyBase: string) {
   }>({
     manifest: {
       id: "org.stremio.animepahe",
-      version: "0.2.1",
+      version: "0.3.0",
       name: "AnimePahe",
       catalogs: [
         {
