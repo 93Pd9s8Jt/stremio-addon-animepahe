@@ -4,7 +4,7 @@ import { parseHTML } from 'linkedom';
 import type { Provider } from "./interface.js";
 import JsUnpacker from "js-unpacker"; // necessary for one of the animepahe scraping methods
 
-const BASEURL = "https://animepahe.si";
+const BASEURL = "https://animepahe.pw";
 
 export class AnimePaheProvider implements Provider {
   async search(title: string, proxyBase: string) {
